@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Task Plan",
+  "description": "Execution plan for an orchestrator run",
+  "type": "object",
+  "required": ["goal", "tasks", "created_at"],
+  "properties": {
+    "goal": {
+      "type": "string",
+      "description": "The goal/objective to accomplish"
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Ordered list of tasks to execute",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "title", "description", "role"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique task identifier"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["analyze", "design", "implement", "test", "document", "review", "validate"],
+            "description": "Type of task"
+          },
+          "title": {
+            "type": "string",
+            "description": "Short task title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed task description"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["architect", "implementer", "tester", "documenter"],
+            "description": "Role responsible for this task"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "failed", "skipped"],
+            "default": "pending"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "IDs of tasks this depends on"
+          },
+          "inputs": {
+            "type": "object",
+            "description": "Input data for the task"
+          },
+          "outputs": {
+            "type": "object",
+            "description": "Output data from the task"
+          }
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the plan was created"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional plan metadata"
+    }
+  }
+}
