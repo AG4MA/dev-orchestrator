@@ -1,3 +1,6 @@
-"""Dev Orchestrator - Agentic development workflow orchestrator."""
+"""Dev Orchestrator - Agentic development workflow orchestrator.
 
-__version__ = "0.1.0"
+Multi-agent system using LangChain + LangGraph with OpenAI.
+"""
+
+__version__ = "0.2.0"

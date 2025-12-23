@@ -1,12 +1,12 @@
 "# Dev Orchestrator
 
-**Orchestratore agentico per accelerare lo sviluppo su repository target.**
+**Orchestratore multi-agente per accelerare lo sviluppo su repository target.**
 
-Produce solo artefatti verificabili: branch, commit, report, checklist.
+Sistema LangChain + LangGraph con OpenAI per orchestrare agenti AI nel pattern 1-N-1.
 
 ## 🎯 Obiettivo
 
-Dev Orchestrator è un sistema che orchestra "ruoli agentici" per eseguire task di sviluppo su un repository target in modo controllato, ripetibile e auditabile.
+Dev Orchestrator è un sistema che orchestra agenti AI per eseguire task di sviluppo su un repository target in modo controllato, ripetibile e auditabile.
 
 **Principi fondamentali:**
 - ✅ Mai modificare main/master direttamente
@@ -15,12 +15,34 @@ Dev Orchestrator è un sistema che orchestra "ruoli agentici" per eseguire task 
 - ✅ Nessun segreto nel codice
 - ✅ Output sempre verificabile
 
+## 🤖 Pattern Multi-Agente (1-N-1)
+
+```
+                    ┌─────────────────┐
+                    │    Architect    │  ← Phase 1: Analyze & Design
+                    └────────┬────────┘
+                             │
+           ┌─────────────────┼─────────────────┐
+           │                 │                 │
+           ▼                 ▼                 ▼
+    ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+    │ Implementer │   │   Tester    │   │ Documenter  │  ← Phase N: Parallel
+    └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
+           │                 │                 │
+           └─────────────────┼─────────────────┘
+                             │
+                    ┌────────▼────────┐
+                    │    Reviewer     │  ← Phase 1: Aggregate & Validate
+                    └─────────────────┘
+```
+
 ## 📦 Installazione
 
 ### Prerequisiti
 
 - Python 3.11+
 - Git installato e configurato
+- **OpenAI API Key** (per il comando `agents`)
 
 ### Setup
 
@@ -38,6 +60,16 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
+### Configurazione OpenAI
+
+```powershell
+# Copia il template
+cp .env.example .env
+
+# Modifica .env con la tua API key
+# OPENAI_API_KEY=sk-your-key-here
+```
+
 ### Verifica installazione
 
 ```powershell
@@ -50,18 +82,41 @@ orchestrator config
 
 ## 🚀 Utilizzo
 
-### Comando principale: `run`
+### Comando Multi-Agente: `agents` (LLM-powered)
 
-Esegue un'orchestrazione completa su un repository target.
+Esegue un'orchestrazione multi-agente con LangChain/OpenAI.
 
 ```powershell
-orchestrator run --repo <path-al-repo> --goal "<obiettivo>"
+orchestrator agents --repo <path-al-repo> --goal "<obiettivo>"
 ```
 
 **Esempio:**
 
 ```powershell
-orchestrator run --repo C:\projects\my-software --goal "Aggiungi una healthcheck endpoint e test basilari"
+orchestrator agents --repo C:\projects\my-software --goal "Aggiungi una healthcheck endpoint e test basilari"
+```
+
+**Cosa fa:**
+1. **Architect** analizza la codebase e progetta la soluzione
+2. **Implementer**, **Tester**, **Documenter** lavorano in parallelo
+3. **Reviewer** aggrega e valida i cambiamenti
+4. Applica le modifiche e crea commit su branch dedicato
+
+**Opzioni:**
+
+| Flag | Descrizione |
+|------|-------------|
+| `--repo, -r` | Percorso al repository target (obbligatorio) |
+| `--goal, -g` | Obiettivo da raggiungere (obbligatorio) |
+| `--model, -m` | Override modello (es. gpt-4o) |
+| `--verbose` | Output dettagliato |
+
+### Comando Legacy: `run`
+
+Esecuzione senza LLM (regole hardcoded).
+
+```powershell
+orchestrator run --repo <path-al-repo> --goal "<obiettivo>"
 ```
 
 **Opzioni:**
@@ -97,21 +152,27 @@ dev-orchestrator/
 │   └── dev_orchestrator/
 │       ├── __init__.py
 │       ├── cli.py                 # Entrypoint CLI (Typer + Rich)
-│       └── core/
-│           ├── config.py          # Configurazione
-│           ├── run_context.py     # Stato della run
-│           ├── git_ops.py         # Operazioni Git sicure
-│           ├── planner.py         # Goal → Task list
-│           ├── executor.py        # Coordinatore principale
-│           └── roles/
-│               ├── base.py        # Interfaccia base ruolo
-│               ├── architect.py   # Analisi e design
-│               ├── implementer.py # Modifiche codice
-│               ├── tester.py      # Test e validazione
-│               └── documenter.py  # Documentazione
+│       ├── core/
+│       │   ├── config.py          # Configurazione
+│       │   ├── run_context.py     # Stato della run
+│       │   ├── git_ops.py         # Operazioni Git sicure
+│       │   ├── llm_config.py      # Configurazione OpenAI
+│       │   ├── planner.py         # Goal → Task list
+│       │   ├── executor.py        # Coordinatore (legacy)
+│       │   └── roles/             # Ruoli hardcoded (legacy)
+│       └── agents/
+│           ├── base_agent.py      # BaseAgent + AgentOutput + AgentState
+│           ├── architect_agent.py # Fase 1: Analisi e design
+│           ├── implementer_agent.py # Fase N: Codice
+│           ├── tester_agent.py    # Fase N: Test
+│           ├── documenter_agent.py # Fase N: Documentazione
+│           ├── reviewer_agent.py  # Fase 1: Review finale
+│           ├── workflow.py        # LangGraph workflow 1-N-1
+│           └── agent_executor.py  # Coordinatore multi-agente
 ├── tests/                         # Test pytest
 ├── templates/                     # Template per report
 ├── runs/                          # Artefatti delle run (ignorato da git)
+├── .env.example                   # Template variabili d'ambiente
 ├── pyproject.toml
 └── README.md
 ```
@@ -137,7 +198,17 @@ dev-orchestrator/
 
 ## ⚙️ Configurazione
 
-Variabili d'ambiente supportate:
+### Variabili OpenAI (per comando `agents`)
+
+| Variabile | Default | Descrizione |
+|-----------|---------|-------------|
+| `OPENAI_API_KEY` | - | **Obbligatoria** - API key OpenAI |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Modello da usare |
+| `OPENAI_TEMPERATURE` | `0.2` | Temperatura (creatività) |
+| `OPENAI_MAX_TOKENS` | `4096` | Max token per risposta |
+| `OPENAI_TIMEOUT` | `60` | Timeout in secondi |
+
+### Variabili Orchestrator
 
 | Variabile | Default | Descrizione |
 |-----------|---------|-------------|
